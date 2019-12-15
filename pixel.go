@@ -1,4 +1,4 @@
-package unicornspi
+package unicornhat
 
 type Pixel struct {
 	r, g, b byte

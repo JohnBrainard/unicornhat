@@ -4,11 +4,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/JohnBrainard/unicornhat/unicornspi"
+	"github.com/JohnBrainard/unicornhat"
 )
 
 func main() {
-	hat, err := unicornspi.Open(unicornspi.UnicornHD)
+	hat, err := unicornhat.Open(unicornhat.UnicornHD)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -19,14 +19,14 @@ func main() {
 		}
 	}()
 
-	pixelTemplates := []unicornspi.Pixel{
-		unicornspi.NewPixel(255, 0, 0),
-		unicornspi.NewPixel(0, 255, 0),
-		unicornspi.NewPixel(0, 0, 255),
+	pixelTemplates := []unicornhat.Pixel{
+		unicornhat.NewPixel(255, 0, 0),
+		unicornhat.NewPixel(0, 255, 0),
+		unicornhat.NewPixel(0, 0, 255),
 	}
 
 	for _, template := range pixelTemplates {
-		pixels := make([]unicornspi.Pixel, 16*16)
+		pixels := make([]unicornhat.Pixel, 16*16)
 
 		for i, _ := range pixels {
 			x := i % 16
@@ -40,7 +40,7 @@ func main() {
 		}
 		hat.SetPixels(pixels)
 		_ = hat.Show()
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 2)
 	}
 
 	hat.Clear()

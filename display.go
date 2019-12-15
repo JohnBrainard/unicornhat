@@ -1,11 +1,6 @@
-package unicornspi
+package unicornhat
 
-import (
-	"periph.io/x/periph/conn/physic"
-	"periph.io/x/periph/conn/spi"
-	"periph.io/x/periph/conn/spi/spireg"
-	"periph.io/x/periph/host"
-)
+import "github.com/JohnBrainard/unicornhat/spi"
 
 type Size int
 
@@ -16,29 +11,29 @@ const (
 
 // Display encapsulates the SPI connection and pixel buffer.
 type Display struct {
-	spi    spi.PortCloser
-	conn   spi.Conn
+	driver Driver
 	size   int
 	buffer []byte
 }
 
 // Open opens the SPI port and connection to the Unicorn hat.
 func Open(size Size) (*Display, error) {
-	_, err := host.Init()
-	if err != nil {
-		return nil, newOpenError("unable to initialize port host", err)
-	}
+	var driver Driver
+	var err error
 
-	port, err := spireg.Open("")
-	if err != nil {
-		return nil, newOpenError("unable to open default SPI device", err)
-	}
+	switch size {
+	case UnicornHD:
+		driver, err = spi.New()
+		if err != nil {
+			return nil, err
+		}
 
-	conn, err := port.Connect(90*physic.KiloHertz, spi.Mode0, 8)
+	default:
+		return nil, errIncompatibleDevice
+	}
 
 	return &Display{
-		spi:    port,
-		conn:   conn,
+		driver: driver,
 		size:   int(size),
 		buffer: make([]byte, size*size*3),
 	}, nil
@@ -83,27 +78,10 @@ func (d *Display) Clear() {
 
 // Show sends the pixel buffer to the Unicorn hat.
 func (d *Display) Show() error {
-	packetData := make([]byte, len(d.buffer)+1)
-	packetData[0] = 0x72
-	copy(packetData[1:], d.buffer)
-
-	packets := []spi.Packet{{
-		W:           packetData,
-		BitsPerWord: 8,
-		KeepCS:      false,
-	}}
-
-	if err := d.conn.TxPackets(packets); err != nil {
-		return errSendingPackets
-	}
-
-	return nil
+	return d.driver.Render(d.buffer)
 }
 
 // Close closes the Display and underlying SPI port.
 func (d *Display) Close() error {
-	if err := d.spi.Close(); err != nil {
-		return newCloseError(err)
-	}
-	return nil
+	return d.driver.Close()
 }
