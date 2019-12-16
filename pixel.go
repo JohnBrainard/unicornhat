@@ -1,5 +1,7 @@
 package unicornhat
 
+import "fmt"
+
 type Pixel struct {
 	r, g, b byte
 }
@@ -22,4 +24,8 @@ func (p Pixel) Invert() Pixel {
 		g: 255 - p.g,
 		b: 255 - p.b,
 	}
+}
+
+func (p Pixel) String() string {
+	return fmt.Sprintf("Pixel(R: %d, G: %d, B:%d)", p.r, p.g, p.b)
 }

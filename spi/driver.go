@@ -35,7 +35,7 @@ func New() (*spiDriver, error) {
 		return nil, errOpenSPIDevice
 	}
 
-	conn, err := port.Connect(90*physic.KiloHertz, spi2.Mode0, 8)
+	conn, err := port.Connect(physic.MegaHertz, spi2.Mode0, 8)
 
 	return &spiDriver{
 		spi:  port,
@@ -53,7 +53,7 @@ func (s *spiDriver) Render(buffer []byte) error {
 		BitsPerWord: 8,
 		KeepCS:      false,
 	}}
-
+	
 	if err := s.conn.TxPackets(packets); err != nil {
 		return errSendingPackets
 	}

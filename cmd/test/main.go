@@ -13,6 +13,15 @@ func main() {
 		log.Panic(err)
 	}
 
+	rotations := []int{
+		0,
+		90,
+		180,
+		270,
+	}
+
+	// hat.Rotate(90)
+
 	defer func() {
 		if err := hat.Close(); err != nil {
 			panic(err)
@@ -23,24 +32,26 @@ func main() {
 		unicornhat.NewPixel(255, 0, 0),
 		unicornhat.NewPixel(0, 255, 0),
 		unicornhat.NewPixel(0, 0, 255),
+		unicornhat.NewPixel(255, 255, 0),
+		unicornhat.NewPixel(255, 0, 255),
+		unicornhat.NewPixel(0, 255, 255),
 	}
 
-	for _, template := range pixelTemplates {
-		pixels := make([]unicornhat.Pixel, 16*16)
-
-		for i, _ := range pixels {
-			x := i % 16
-			y := i / 16
-
-			if y < 4 && (x == 7 || x == 8) {
-				pixels[i] = template.Invert()
-			} else {
-				pixels[i] = template
+	for _, rotation := range rotations {
+		hat.Rotate(rotation)
+		for _, template := range pixelTemplates {
+			for x := 0; x < 16; x++ {
+				for y := 0; y < 16; y++ {
+					if y < 4 && (x == 7 || x == 8) {
+						hat.SetPixel(x, y, template.Invert())
+					} else {
+						hat.SetPixel(x, y, template)
+					}
+				}
 			}
+			_ = hat.Show()
+			time.Sleep(time.Second / 3)
 		}
-		hat.SetPixels(pixels)
-		_ = hat.Show()
-		time.Sleep(time.Second * 2)
 	}
 
 	hat.Clear()

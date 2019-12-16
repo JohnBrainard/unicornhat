@@ -1,6 +1,8 @@
 package unicornhat
 
-import "github.com/JohnBrainard/unicornhat/spi"
+import (
+	"github.com/JohnBrainard/unicornhat/spi"
+)
 
 type Size int
 
@@ -11,9 +13,10 @@ const (
 
 // Display encapsulates the SPI connection and pixel buffer.
 type Display struct {
-	driver Driver
-	size   int
-	buffer []byte
+	driver   Driver
+	size     int
+	buffer   []byte
+	rotation int
 }
 
 // Open opens the SPI port and connection to the Unicorn hat.
@@ -39,25 +42,23 @@ func Open(size Size) (*Display, error) {
 	}, nil
 }
 
+func (d *Display) Rotate(degrees int) {
+	d.rotation = degrees
+}
+
 // SetPixel sets the RGB data at the X,Y coordinates in the buffer.
 func (d *Display) SetPixel(x, y int, pixel Pixel) error {
 	if x > d.size || y > d.size {
-		panic(errBufferOverflow)
+		return errBufferOverflow
 	}
 
-	i := x*d.size + y
-	return d.SetPixelAt(i, pixel)
-}
+	dx, dy := d.translateXY(x, y)
 
-// SetPixelAt sets the RGB data at the provided position in the buffer.
-func (d *Display) SetPixelAt(pos int, pixel Pixel) error {
-	if pos < 0 || pos+3 > len(d.buffer) {
-		panic(errBufferOverflow)
-	}
+	i := dy*d.size + dx
 
-	d.buffer[3*pos] = pixel.r
-	d.buffer[3*pos+1] = pixel.g
-	d.buffer[3*pos+2] = pixel.b
+	d.buffer[3*i] = pixel.r
+	d.buffer[3*i+1] = pixel.g
+	d.buffer[3*i+2] = pixel.b
 
 	return nil
 }
@@ -65,7 +66,7 @@ func (d *Display) SetPixelAt(pos int, pixel Pixel) error {
 // SetPixels sets the pixel buffer to the provided pixels.
 func (d *Display) SetPixels(pixels []Pixel) {
 	for i, pixel := range pixels {
-		if err := d.SetPixelAt(i, pixel); err != nil {
+		if err := d.setPixelAt(i, pixel); err != nil {
 			panic(errBufferOverflow)
 		}
 	}
@@ -84,4 +85,35 @@ func (d *Display) Show() error {
 // Close closes the Display and underlying SPI port.
 func (d *Display) Close() error {
 	return d.driver.Close()
+}
+
+// setPixelAt sets the RGB data at the provided position in the buffer.
+func (d *Display) setPixelAt(pos int, pixel Pixel) error {
+	if pos < 0 || pos+3 > len(d.buffer) {
+		return errBufferOverflow
+	}
+
+	return d.SetPixel(pos%d.size, pos/d.size, pixel)
+}
+
+func (d *Display) translateXY(sx, sy int) (dx, dy int) {
+	switch d.rotation {
+	case 90:
+		dx = d.size - sy - 1
+		dy = sx
+		// dy = d.size - sx - 1
+
+	case 180:
+		dx = d.size - sx - 1
+		dy = d.size - sy - 1
+
+	case 270:
+		dx = sy
+		dy = d.size - sx - 1
+
+	default:
+		return sx, sy
+	}
+
+	return
 }
